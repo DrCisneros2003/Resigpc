@@ -267,6 +267,14 @@
     .tutor-fab{right:14px;padding:12px 16px;font-size:14px}
 
     .foot{margin-bottom:10px}
+
+    /* Encabezado: el eslogan se ocultaba mal y empujaba el botón de cuenta fuera de la pantalla */
+    header{flex-wrap:nowrap;gap:8px}
+    .sub{display:none}
+    .brand{min-width:0;flex:1}
+    .brandmark{width:34px;height:34px}
+    #acctBtn{margin-left:auto;flex:none;max-width:52vw;display:inline-flex;align-items:center;padding:8px 11px!important;font-size:13px!important;overflow:hidden}
+    .acctname{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom}
   }
 
   /* Pantallas muy angostas, tipo iPhone SE */
@@ -278,6 +286,9 @@
     .opt{font-size:14.5px}
     .card{height:360px}
     .tutor-fab span.lbl{display:none}
+    .logo{font-size:17px}
+    .acctname{max-width:72px}
+    #acctBtn{padding:7px 9px!important;font-size:12px!important}
   }
 
   /* Altura real del viewport en móviles modernos: evita cortes por la barra del navegador */
@@ -331,7 +342,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
-<!-- RESIGPC_BUILD movil-v4 -->
+<!-- RESIGPC_BUILD movil-v5 -->
 <div class="bgscene" aria-hidden="true">
   <span class="snow" style="left:8%;animation-duration:11s;animation-delay:0s"></span>
   <span class="snow" style="left:20%;width:5px;height:5px;animation-duration:14s;animation-delay:2s"></span>
@@ -16512,7 +16523,7 @@ function updateAccountBtn(){
     const badge = isPremiumFlag
       ? '<span style="background:#fbbf24;color:#3a2a00;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;margin-left:8px;letter-spacing:.3px">PREMIUM</span>'
       : '<span style="background:rgba(255,255,255,.22);color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;margin-left:8px">GRATIS</span>';
-    b.innerHTML=name+badge;
+    b.innerHTML='<span class="acctname">'+name+'</span>'+badge;
   } else {
     b.textContent="Iniciar sesión";
   }
