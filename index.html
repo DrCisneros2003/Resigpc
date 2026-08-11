@@ -342,7 +342,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
-<!-- RESIGPC_BUILD cache-fix-v7 -->
+<!-- RESIGPC_BUILD premium-contacto-v8 -->
 <div class="bgscene" aria-hidden="true">
   <span class="snow" style="left:8%;animation-duration:11s;animation-delay:0s"></span>
   <span class="snow" style="left:20%;width:5px;height:5px;animation-duration:14s;animation-delay:2s"></span>
@@ -15742,6 +15742,41 @@ const GUIDES = [
 const TUTOR_ENDPOINT = "https://resigpc-tutor.yisuspro260903.workers.dev";
 /* Link de suscripción de Mercado Pago (ResiGPC Premium $129/mes) */
 const PREMIUM_URL = "https://mpago.la/2aqkxqo";
+
+/* ─────────────────────────────────────────────────────────────
+   CORREO DE CONTACTO PARA ACTIVAR PREMIUM
+   Aquí llegan los comprobantes de pago. Para cambiarlo, solo
+   reemplaza el correo de la línea de abajo y vuelve a subir el archivo.
+   ───────────────────────────────────────────────────────────── */
+const CONTACTO_EMAIL = "resigpc.contacto@gmail.com";
+
+// Arma el enlace de correo con el asunto y el mensaje ya escritos,
+// incluyendo el correo con el que el alumno inició sesión.
+function mailActivar(){
+  const suyo = (authUser && authUser.email) ? authUser.email : "";
+  const asunto = "Activar ResiGPC Premium";
+  const cuerpo =
+    "Hola, acabo de realizar el pago de ResiGPC Premium.\n\n" +
+    "Correo de mi cuenta: " + (suyo || "escribe aquí tu correo de registro") + "\n" +
+    "Adjunto el comprobante de pago.\n\n" +
+    "Gracias.";
+  return "mailto:" + CONTACTO_EMAIL +
+         "?subject=" + encodeURIComponent(asunto) +
+         "&body=" + encodeURIComponent(cuerpo);
+}
+
+// Bloque que se muestra después del botón de pago, para que el alumno
+// sepa exactamente qué hacer para que le activemos la cuenta.
+function avisoActivacionHTML(){
+  return `<div style="background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-top:16px;text-align:left;max-width:420px">
+    <div style="font-weight:800;color:var(--brand-d);font-size:13.5px;margin-bottom:5px">Después de pagar</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.55">
+      Envíanos tu <b>comprobante</b> junto con el <b>correo de tu cuenta</b> y activamos tu Premium en menos de 24 horas.
+    </div>
+    <a href="${mailActivar()}" style="display:inline-block;margin-top:10px;background:var(--brand);color:#fff;text-decoration:none;padding:9px 15px;border-radius:10px;font-weight:700;font-size:13px">Enviar comprobante</a>
+    <div style="font-size:11.5px;color:#94a3b8;margin-top:8px;word-break:break-all">${CONTACTO_EMAIL}</div>
+  </div>`;
+}
 const LS_KEY="guiaclinica_progress_v1";
 function loadProg(){try{return JSON.parse(localStorage.getItem(LS_KEY))||{}}catch(e){return {}}}
 function saveProg(p){try{localStorage.setItem(LS_KEY,JSON.stringify(p))}catch(e){}}
@@ -16818,6 +16853,8 @@ function simShowDailyLimit(){
         ${SUPA_ON && !authUser ? '<button class="btn ghost" onclick="openAuth(\'login\')">Iniciar sesión</button>' : ''}
         <button class="btn ghost" onclick="simConfig()">← Volver</button>
       </div>
+      <div style="display:flex;justify-content:center">${avisoActivacionHTML()}
+      </div>
     </div>`;
 }
 function simShowLocked(n){
@@ -16834,6 +16871,7 @@ function simShowLocked(n){
           : `<button class="btn ghost" onclick="simEnterCode(${n})">Ya tengo mi código</button>`}
         <button class="btn ghost" onclick="simConfig()">← Volver</button>
       </div>
+      <div style="display:flex;justify-content:center">${avisoActivacionHTML()}</div>
     </div>`;
 }
 async function simEnterCode(n){
@@ -17137,6 +17175,8 @@ function tutorEnterCode(){
   tutorDeliver(true);
 }
 function tutorShowLocked(msg){
+  // Se agrega el aviso de activación para que el alumno sepa qué hacer tras pagar
+  if(msg && msg.indexOf("premium")>=0) msg = msg + avisoActivacionHTML();
   const c=document.getElementById("tutorMsgs");
   const d=document.createElement("div");
   d.className="tmsg a";
