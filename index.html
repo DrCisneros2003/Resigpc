@@ -358,7 +358,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
-<!-- RESIGPC_BUILD banco-1000-retencion -->
+<!-- RESIGPC_BUILD banco-1000-compartir -->
 <div class="bgscene" aria-hidden="true">
   <span class="snow" style="left:8%;animation-duration:11s;animation-delay:0s"></span>
   <span class="snow" style="left:20%;width:5px;height:5px;animation-duration:14s;animation-delay:2s"></span>
@@ -15833,6 +15833,92 @@ function renderFilters(){
     f.appendChild(b);
   });
 }
+/* ===================== TARJETA PARA COMPARTIR =====================
+   Dibuja una imagen de 1080 por 1920, la medida exacta de una historia.
+   En celular abre el menú de compartir del sistema; en computadora la descarga.
+   Cada alumno que la sube es publicidad que no pagaste. */
+function tarjSitio(){
+  try{ return (location.host+location.pathname).replace(/\/$/,"").replace(/^www\./,""); }
+  catch(e){ return "ResiGPC"; }
+}
+function tarjTexto(ctx,txt,x,y,size,color,peso,alin){
+  ctx.fillStyle=color; ctx.textAlign=alin||"center";
+  ctx.font=(peso||"400")+" "+size+"px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+  ctx.fillText(txt,x,y);
+}
+function tarjDibujar(tipo,d){
+  const W=1080,H=1920,cx=W/2;
+  const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+  const ctx=cv.getContext("2d");
+  const racha = tipo==="racha";
+  ctx.fillStyle = racha ? "#7c2d12" : "#06263f";
+  ctx.fillRect(0,0,W,H);
+  const claro = racha ? "#f5c4b3" : "#85b7eb";
+  const linea = racha ? "#d85a30" : "#185fa5";
+
+  ctx.letterSpacing="6px";
+  tarjTexto(ctx,"RESIGPC",cx,150,42,claro,"500");
+  ctx.letterSpacing="0px";
+
+  if(racha){
+    tarjTexto(ctx,"🔥",cx,700,190,"#fff","400");
+    tarjTexto(ctx,String(d.streak),cx,1000,260,"#fff","500");
+    tarjTexto(ctx,d.streak===1?"día seguido":"días seguidos",cx,1080,58,claro,"400");
+    ctx.fillStyle=linea; ctx.fillRect(cx-70,1180,140,3);
+    tarjTexto(ctx,d.answered.toLocaleString("es-MX")+" preguntas contestadas",cx,1280,44,claro,"400");
+    tarjTexto(ctx,d.pct+"% de aciertos",cx,1350,44,claro,"400");
+    ctx.fillStyle=linea; ctx.fillRect(120,1700,W-240,3);
+    tarjTexto(ctx,"Reto del día · 10 preguntas",cx,1790,42,claro,"400");
+    tarjTexto(ctx,tarjSitio(),cx,1856,40,"#fff","400");
+  } else {
+    tarjTexto(ctx,"Simulacro ENARM",cx,720,48,claro,"400");
+    ctx.textAlign="center";
+    ctx.font="500 250px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+    const grande=String(d.score), chico="/"+d.total;
+    ctx.font="500 250px -apple-system, BlinkMacSystemFont, sans-serif";
+    const w1=ctx.measureText(grande).width;
+    ctx.font="500 100px -apple-system, BlinkMacSystemFont, sans-serif";
+    const w2=ctx.measureText(chico).width;
+    const inicio=cx-(w1+w2)/2;
+    ctx.textAlign="left";
+    ctx.fillStyle="#fff"; ctx.font="500 250px -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.fillText(grande,inicio,940);
+    ctx.fillStyle=claro; ctx.font="500 100px -apple-system, BlinkMacSystemFont, sans-serif";
+    ctx.fillText(chico,inicio+w1,940);
+    tarjTexto(ctx,d.pct+"% de aciertos",cx,1030,54,"#9fe1cb","400");
+    ctx.fillStyle=linea; ctx.fillRect(cx-70,1140,140,3);
+    if(d.area){
+      tarjTexto(ctx,"Mejor área",cx,1250,42,claro,"400");
+      tarjTexto(ctx,d.area,cx,1325,50,"#fff","500");
+    }
+    ctx.fillStyle=linea; ctx.fillRect(120,1700,W-240,3);
+    // El número sale del banco real, así nunca queda desactualizado ni miente
+    const nBanco=(typeof simPool==="function")?simPool().length:0;
+    tarjTexto(ctx,nBanco.toLocaleString("es-MX")+" preguntas con GPC mexicanas",cx,1790,42,claro,"400");
+    tarjTexto(ctx,tarjSitio(),cx,1856,40,"#fff","400");
+  }
+  return cv;
+}
+async function compartirTarjeta(tipo,d){
+  track("compartir",{tipo:tipo});
+  const cv=tarjDibujar(tipo,d);
+  const nombre = tipo==="racha" ? "resigpc-racha.png" : "resigpc-simulacro.png";
+  cv.toBlob(async blob=>{
+    if(!blob){ alert("No pude generar la imagen en este navegador."); return; }
+    const file=new File([blob],nombre,{type:"image/png"});
+    // En celular se abre el menú del sistema y puede ir directo a historias
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({files:[file], title:"ResiGPC", text: tipo==="racha" ? "Mi racha en ResiGPC 🔥" : "Mi simulacro ENARM en ResiGPC"});
+        return;
+      }catch(e){ if(e && e.name==="AbortError") return; }
+    }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download=nombre; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+  },"image/png");
+}
+
 /* ===================== RETO DEL DÍA =====================
    Diez preguntas nuevas cada día, las MISMAS para todos los alumnos.
    Es gratis siempre y no consume el simulacro diario: su único propósito
@@ -17576,12 +17662,27 @@ function simFinish(){
   /* La tarjeta que aparece justo después de calificar.
      El mejor momento para ofrecer algo no es cuando el alumno está contento,
      es cuando acaba de ver en qué está flojo. Ahí el ofrecimiento es un favor. */
+  // Mejor área del examen: es lo que se presume en la tarjeta
+  const mejorArea=(()=>{
+    const c=areas.filter(a=>byArea[a].total>=2);
+    if(!c.length) return "";
+    c.sort((a,b)=>(byArea[b].ok/byArea[b].total)-(byArea[a].ok/byArea[a].total));
+    const o=byArea[c[0]];
+    return c[0]+" · "+Math.round(100*o.ok/o.total)+"%";
+  })();
+  const sEst=loadStats();
+  const datosRacha={streak:sEst.streak||0, answered:sEst.answered||0, pct:(sEst.answered?Math.round(100*(sEst.correct||0)/sEst.answered):0)};
+  const datosSim={score:score,total:total,pct:pct,area:mejorArea};
+
   const retoHtml = eraReto ? (()=>{
     const st=(loadStats().streak)||0;
     return `<div class="dolor" style="background:linear-gradient(160deg,#eaf7ef,#d6efdf);border-color:#a8d8ba">
       <div class="dolor-t">🔥 Racha: ${st} ${st===1?"día":"días"} seguidos</div>
       <p>Mañana hay <b>10 preguntas nuevas</b>, distintas y las mismas para todos. Vuelve para no romper tu racha.</p>
-      ${(SUPA_ON && !authUser) ? '<button class="btn" onclick="openAuth(\'signup\')">Guardar mi racha · Gratis</button>' : '<button class="btn ghost" onclick="goHome()">Volver al inicio</button>'}
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        ${st>=2?`<button class="btn" onclick='compartirTarjeta("racha",${JSON.stringify(datosRacha)})'>📲 Compartir mi racha</button>`:""}
+        ${(SUPA_ON && !authUser) ? '<button class="btn'+(st>=2?' ghost':'')+'" onclick="openAuth(\'signup\')">Guardar mi racha · Gratis</button>' : '<button class="btn ghost" onclick="goHome()">Volver al inicio</button>'}
+      </div>
     </div>`;
   })() : "";
 
@@ -17625,7 +17726,8 @@ function simFinish(){
     ${debilHtml}
     ${wrongHtml}
     <div style="display:flex;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap">
-      <button class="btn" onclick="simConfig()">Nuevo simulacro</button>
+      ${eraReto?"":`<button class="btn" onclick='compartirTarjeta("simulacro",${JSON.stringify(datosSim)})'>📲 Compartir resultado</button>`}
+      <button class="btn${eraReto?"":" ghost"}" onclick="simConfig()">Nuevo simulacro</button>
       <button class="btn ghost" onclick="simExit()">Volver al inicio</button>
     </div>`;
   window.scrollTo(0,0);
