@@ -1,0 +1,5 @@
+# ResiGPC · https://drcisneros2003.github.io/Resigpc/
+User-agent: *
+Allow: /
+
+Sitemap: https://drcisneros2003.github.io/Resigpc/sitemap.xml
