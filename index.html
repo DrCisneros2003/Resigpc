@@ -334,6 +334,17 @@
   .tlock-code{background:var(--soft);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 16px;font-weight:600;font-size:13.5px;cursor:pointer}
   .hide{display:none}
 
+.reto{display:flex;align-items:center;gap:12px;background:linear-gradient(120deg,#0b2b45,#155e9c);color:#fff;border-radius:14px;padding:14px 16px;margin:2px 0 12px;box-shadow:0 6px 18px rgba(11,43,69,.18)}
+.reto-l{flex:1;min-width:0}
+.reto-t{font-size:15px;font-weight:800;line-height:1.3}
+.reto-s{font-size:12.5px;opacity:.93;line-height:1.45;margin-top:3px}
+.reto-s b{color:#ffd88a}
+.reto-b{background:#fff;color:#0f4c81;border:0;border-radius:999px;padding:10px 18px;font-weight:800;font-size:13.5px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.reto-b.ghost{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.4)}
+.reto-ok{background:linear-gradient(120deg,#0f5132,#1a7a4a)}
+.reto-riesgo{background:linear-gradient(120deg,#7c2d12,#c2410c)}
+.reto-err{background:linear-gradient(120deg,#155e9c,#1877c9)}
+@media(max-width:520px){ .reto{flex-direction:column;align-items:stretch;text-align:center} .reto-b{width:100%} }
 .dolor{background:linear-gradient(160deg,#eef6fc,#dceefb);border:1px solid #bfe0f5;border-radius:16px;padding:18px 16px;margin:20px auto 0;max-width:620px;text-align:center}
 .dolor-t{font-size:15px;font-weight:800;color:var(--brand-d);margin-bottom:6px}
 .dolor p{font-size:13.5px;color:var(--ink);line-height:1.55;margin:0 0 14px}
@@ -347,7 +358,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
-<!-- RESIGPC_BUILD banco-1000-analitica -->
+<!-- RESIGPC_BUILD banco-1000-retencion -->
 <div class="bgscene" aria-hidden="true">
   <span class="snow" style="left:8%;animation-duration:11s;animation-delay:0s"></span>
   <span class="snow" style="left:20%;width:5px;height:5px;animation-duration:14s;animation-delay:2s"></span>
@@ -15822,6 +15833,98 @@ function renderFilters(){
     f.appendChild(b);
   });
 }
+/* ===================== RETO DEL DÍA =====================
+   Diez preguntas nuevas cada día, las MISMAS para todos los alumnos.
+   Es gratis siempre y no consume el simulacro diario: su único propósito
+   es dar una razón para abrir la app mañana. Sin eso, ninguna app de estudio
+   sobrevive más de una tarde. */
+const RETO_KEY="resigpc_reto_v1";
+const RETO_N=10;
+let retoActivo=false;
+
+function retoHecho(){
+  try{ const d=JSON.parse(localStorage.getItem(RETO_KEY))||{}; return d.date===dstr(new Date()) ? d : null; }catch(e){ return null; }
+}
+/* Semilla a partir de la fecha: así el reto es idéntico para todos ese día,
+   y distinto cada día, sin necesidad de servidor. */
+function retoSemilla(txt){
+  let h=2166136261;
+  for(let i=0;i<txt.length;i++){ h^=txt.charCodeAt(i); h=Math.imul(h,16777619); }
+  return ()=>{ h+=0x6D2B79F5; let t=h; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; };
+}
+function retoItems(){
+  const hoy=dstr(new Date()), rnd=retoSemilla("resigpc-"+hoy);
+  const pool=simPool();
+  const usados=new Set(); const out=[];
+  let guard=0;
+  while(out.length<RETO_N && guard++<RETO_N*40){
+    const i=Math.floor(rnd()*pool.length);
+    if(usados.has(i)) continue;
+    usados.add(i);
+    const it=pool[i];
+    out.push({...it, caso:null, sub:0, subN:1, expl:it.expl||null, order:it.opts.map((_,k)=>k).sort(()=>rnd()-0.5)});
+  }
+  return out;
+}
+function retoStart(){
+  const y=retoHecho();
+  if(y && !confirm(`Hoy ya hiciste el reto y sacaste ${y.score} de ${y.total}. ¿Quieres repetirlo? No cambiará tu resultado guardado.`)) return;
+  track("reto_inicio");
+  retoActivo=true;
+  document.getElementById("home").classList.add("hide");
+  document.getElementById("guideView").classList.add("hide");
+  document.getElementById("progView").classList.add("hide");
+  document.getElementById("simView").classList.remove("hide");
+  simMode="study";
+  simItems=retoItems();
+  simPos=0; simAnswers=new Array(simItems.length).fill(null);
+  simTotalSecs=simItems.length*60; simLeft=simTotalSecs;
+  document.getElementById("simTimer").classList.add("hide");
+  simRender(); window.scrollTo(0,0);
+}
+function retoGuardar(score,total){
+  try{ localStorage.setItem(RETO_KEY, JSON.stringify({date:dstr(new Date()),score,total})); }catch(e){}
+}
+
+/* Tarjeta grande del inicio: el reto de hoy y el estado de la racha. */
+function retoCardHTML(){
+  const s=(typeof loadStats==="function")?loadStats():{};
+  const streak=s.streak||0, hecho=retoHecho();
+  if(hecho){
+    const p=Math.round(100*hecho.score/hecho.total);
+    return `<div class="reto reto-ok">
+      <div class="reto-l">
+        <div class="reto-t">✅ Reto de hoy completado</div>
+        <div class="reto-s">Sacaste <b>${hecho.score} de ${hecho.total}</b> · ${p}%. ${streak>0?`Llevas <b>${streak}</b> ${streak===1?"día":"días"} seguidos.`:""} Mañana hay 10 preguntas nuevas.</div>
+      </div>
+      <button class="reto-b ghost" onclick="retoStart()">Repetir</button>
+    </div>`;
+  }
+  const aviso = streak>=2
+    ? `Llevas <b>${streak} días</b> seguidos. Si no lo haces hoy, tu racha vuelve a cero.`
+    : `Diez preguntas nuevas, las mismas para todos. Empieza tu racha.`;
+  return `<div class="reto${streak>=2?" reto-riesgo":""}">
+    <div class="reto-l">
+      <div class="reto-t">${streak>=2?"🔥":"🎯"} Reto del día · ${RETO_N} preguntas</div>
+      <div class="reto-s">${aviso}</div>
+    </div>
+    <button class="reto-b" onclick="retoStart()">Empezar</button>
+  </div>`;
+}
+
+/* Repasar errores: la función más valiosa del ENARM, ahora a la vista. */
+function erroresCardHTML(){
+  let n=0; try{ n=(JSON.parse(localStorage.getItem(SIM_ERR_KEY))||[]).length; }catch(e){}
+  if(!n) return "";
+  return `<div class="reto reto-err">
+    <div class="reto-l">
+      <div class="reto-t">🔁 Repasar mis errores · ${n}</div>
+      <div class="reto-s">Solo las que has fallado. Cuando una la aciertas, sale sola de la lista.</div>
+    </div>
+    <button class="reto-b" onclick="openSim();simRunErrors()">Repasar</button>
+  </div>`;
+}
+
 function homeStatsHTML(){
   const s=(typeof loadStats==="function")?loadStats():{};
   const streak=s.streak||0, ans=s.answered||0, pct=ans?Math.round(100*(s.correct||0)/ans):0;
@@ -15836,7 +15939,7 @@ function homeStatsHTML(){
 }
 function renderHome(){
   renderFilters();
-  const hs=document.getElementById("homeStats"); if(hs) hs.innerHTML=homeStatsHTML();
+  const hs=document.getElementById("homeStats"); if(hs) hs.innerHTML=retoCardHTML()+erroresCardHTML()+homeStatsHTML();
   const q=norm(document.getElementById("search")?document.getElementById("search").value:"");
   const g=document.getElementById("guideGrid");
   g.innerHTML="";
@@ -15871,6 +15974,7 @@ function renderHome(){
   });
 }
 function goHome(){
+  retoActivo=false;
   if(typeof simTimer!=="undefined" && simTimer){ clearInterval(simTimer); simTimer=null; }
   const sv=document.getElementById("simView"); if(sv) sv.classList.add("hide");
   const st=document.getElementById("simTimer"); if(st) st.classList.add("hide");
@@ -17158,6 +17262,7 @@ function openSim(){
   window.scrollTo(0,0);
 }
 function simExit(){
+  retoActivo=false;
   if(simTimer){clearInterval(simTimer);simTimer=null;}
   document.getElementById("simTimer").classList.add("hide");
   document.getElementById("simView").classList.add("hide");
@@ -17427,7 +17532,9 @@ function simFinish(){
     if(!prev||pct>prev.pct)localStorage.setItem(SIM_BEST,JSON.stringify({score,total,pct}));
   }catch(e){}
   recordSim(byArea,score,total);
-  track("simulacro_fin",{total:total,pct:pct});
+  const eraReto=retoActivo; retoActivo=false;
+  if(eraReto){ retoGuardar(score,total); track("reto_fin",{pct:pct}); }
+  else track("simulacro_fin",{total:total,pct:pct});
   try{
     const keyOf=it=>it.q+"||"+(it.opts||[]).join("|");
     let errs=JSON.parse(localStorage.getItem(SIM_ERR_KEY))||[];
@@ -17469,7 +17576,17 @@ function simFinish(){
   /* La tarjeta que aparece justo después de calificar.
      El mejor momento para ofrecer algo no es cuando el alumno está contento,
      es cuando acaba de ver en qué está flojo. Ahí el ofrecimiento es un favor. */
+  const retoHtml = eraReto ? (()=>{
+    const st=(loadStats().streak)||0;
+    return `<div class="dolor" style="background:linear-gradient(160deg,#eaf7ef,#d6efdf);border-color:#a8d8ba">
+      <div class="dolor-t">🔥 Racha: ${st} ${st===1?"día":"días"} seguidos</div>
+      <p>Mañana hay <b>10 preguntas nuevas</b>, distintas y las mismas para todos. Vuelve para no romper tu racha.</p>
+      ${(SUPA_ON && !authUser) ? '<button class="btn" onclick="openAuth(\'signup\')">Guardar mi racha · Gratis</button>' : '<button class="btn ghost" onclick="goHome()">Volver al inicio</button>'}
+    </div>`;
+  })() : "";
+
   const debilHtml=(()=>{
+    if(eraReto) return "";
     try{
       const cand=areas.filter(a=>byArea[a].total>=2);
       if(!cand.length) return "";
@@ -17503,6 +17620,7 @@ function simFinish(){
       <h3>${pct}% — ${msg}</h3>
       ${simMode==="exam"?`<p class="muted">Tiempo utilizado: ${um} min ${us} s de ${Math.round(simTotalSecs/60)} min</p>`:`<p class="muted">Modo estudio</p>`}
     </div>
+    ${retoHtml}
     ${areaHtml}
     ${debilHtml}
     ${wrongHtml}
