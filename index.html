@@ -379,7 +379,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
-<!-- RESIGPC_BUILD banco-1627 -->
+<!-- RESIGPC_BUILD banco-1627-fix -->
 <div class="bgscene" aria-hidden="true">
   <span class="snow" style="left:8%;animation-duration:11s;animation-delay:0s"></span>
   <span class="snow" style="left:20%;width:5px;height:5px;animation-duration:14s;animation-delay:2s"></span>
@@ -16044,7 +16044,16 @@ function homeStatsHTML(){
       <div style="font-size:22px;font-weight:800;color:#155e9c">${ans.toLocaleString('es-MX')}</div><div style="font-size:11.5px;color:#3a6285">Preguntas</div></div>
   </div>`;
 }
+/* El catálogo del pie existe para que Google pueda leer el contenido, pero
+   estorba mientras el alumno hace un simulacro o estudia una guía: alarga la
+   página y confunde el desplazamiento. Se muestra solo en la pantalla de inicio. */
+function pieCatalogo(mostrar){
+  const f=document.querySelector(".seo-cat");
+  if(f) f.style.display = mostrar ? "" : "none";
+}
+
 function renderHome(){
+  pieCatalogo(true);
   renderFilters();
   const hs=document.getElementById("homeStats"); if(hs) hs.innerHTML=retoCardHTML()+erroresCardHTML()+homeStatsHTML();
   const q=norm(document.getElementById("search")?document.getElementById("search").value:"");
@@ -16092,6 +16101,7 @@ function goHome(){
   window.scrollTo(0,0);
 }
 function openGuide(id){
+  pieCatalogo(false);
   track("vio_guia",{guia:String(id).slice(0,60)});
   cur=GUIDES.find(x=>x.id===id);
   if(cur.status!=="listo"){
@@ -17229,6 +17239,7 @@ function recordSim(byArea,score,total){
   if(typeof pushStats==="function") pushStats(); // si hay sesión, sube a la nube
 }
 function openProgress(){
+  pieCatalogo(false);
   if(percAreas===null) pedirPercentiles();
   document.getElementById("home").classList.add("hide");
   document.getElementById("guideView").classList.add("hide");
@@ -17798,6 +17809,7 @@ function simBlocks(){
   return blocks;
 }
 function openSim(){
+  pieCatalogo(false);
   document.getElementById("home").classList.add("hide");
   document.getElementById("guideView").classList.add("hide");
   const pv=document.getElementById("progView"); if(pv) pv.classList.add("hide");
@@ -18043,7 +18055,17 @@ function simRender(){
       const b=document.createElement("button");
       b.className="opt"+(simAnswers[simPos]===oi?" correct":"");
       b.innerHTML=it.opts[oi];
-      b.onclick=()=>{simAnswers[simPos]=oi;simRender();window.scrollTo(0,document.body.scrollHeight);};
+      b.onclick=()=>{
+        simAnswers[simPos]=oi;
+        simRender();
+        // Antes esto mandaba al final de la página. Desde que existe el catálogo
+        // del pie, el final ya no es la explicación, así que ahora llevamos la
+        // vista exactamente a la retroalimentación de la pregunta respondida.
+        setTimeout(()=>{
+          const fb=document.getElementById("simFb");
+          if(fb && fb.scrollIntoView) fb.scrollIntoView({behavior:"smooth",block:"center"});
+        },40);
+      };
       box.appendChild(b);
     });
   }
