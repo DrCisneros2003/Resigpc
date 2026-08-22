@@ -67,7 +67,7 @@
   .panel{background:var(--card);border-radius:18px;padding:22px;box-shadow:0 18px 40px rgba(0,0,0,.25)}
   h1{font-size:26px;margin:0 0 6px}
   .lead{color:var(--muted);margin:0 0 22px;font-size:15px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
   @media(max-width:640px){.grid{grid-template-columns:1fr}}
   .search{width:100%;padding:14px 16px;font-size:16px;border:1.5px solid var(--line);border-radius:12px;margin-bottom:14px;outline:none}
   .search:focus{border-color:var(--brand)}
@@ -78,18 +78,21 @@
   .catalog-meta{font-size:13px;color:var(--muted);margin-bottom:14px}
   .pdflink{display:inline-block;margin:2px 0 6px;font-size:13px;font-weight:600;color:var(--brand-d);text-decoration:none;background:var(--soft);padding:7px 12px;border-radius:10px}
   .pdflink:hover{background:#dceefb}
-  .card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}
-  .badge{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:20px;white-space:nowrap}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;flex-wrap:wrap}
+  .badge{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:3px 9px;border-radius:20px;white-space:nowrap;flex:0 0 auto;max-width:100%;overflow:hidden;text-overflow:ellipsis}
   .b-ready{background:#dceefb;color:#0f4c81}
   .b-soon{background:#f1f5f9;color:#94a3b8}
   .guide-card.soon{opacity:.72}
   .guide-card.soon:hover{border-color:var(--line);transform:none;box-shadow:none;cursor:default}
-  .guide-card{border:1px solid var(--line);border-radius:16px;padding:20px;cursor:pointer;transition:.15s;background:#fff}
+  .guide-card{border:1px solid var(--line);border-radius:16px;padding:20px;cursor:pointer;transition:.15s;background:#fff;display:flex;flex-direction:column;height:100%;min-width:0}
+  .guide-card h3{overflow-wrap:anywhere}
+  .gc-sub{font-size:13.5px;font-weight:600;color:var(--brand-d);margin:-4px 0 6px;line-height:1.35}
   .guide-card:hover{border-color:var(--brand);transform:translateY(-2px);box-shadow:0 10px 24px rgba(22,163,74,.18)}
   .guide-card h3{margin:0 0 6px;font-size:18px}
-  .tag{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--soft);color:var(--brand-d);margin-bottom:12px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--soft);color:var(--brand-d);margin-bottom:12px;white-space:nowrap;flex:0 0 auto}
+  .card-top .tag{margin-bottom:0}
   .guide-card p{margin:0;color:var(--muted);font-size:13px}
-  .stat-line{margin-top:14px;font-size:12px;color:var(--muted);display:flex;gap:14px}
+  .stat-line{margin-top:auto;padding-top:14px;font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
   .stat-line b{color:var(--ink)}
   /* tabs */
   .topbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
@@ -402,7 +405,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
-<!-- RESIGPC_BUILD banco-2759-gpc216-guiasbarajadas -->
+<!-- RESIGPC_BUILD banco-2759-gpc216-tarjetas-intl -->
 <div class="bgscene" aria-hidden="true">
   <span class="snow" style="left:8%;animation-duration:11s;animation-delay:0s"></span>
   <span class="snow" style="left:20%;width:5px;height:5px;animation-duration:14s;animation-delay:2s"></span>
@@ -942,6 +945,16 @@ function intlAviso(){
   </div>`;
 }
 let intlTab="guias";
+function edCorta(ed){
+  const a=(ed||"").match(/\d{4}/g);
+  if(!a) return "Vigente";
+  if(a.length===1) return a[0];
+  return a[0]+" · act. "+a[a.length-1];
+}
+function corto(s,n){
+  s=(s||"").trim();
+  return s.length<=n ? s : s.slice(0,n-1).replace(/[\s,;·]+$/,"")+"…";
+}
 function renderIntlList(){
   const p=document.getElementById("intlPane");
   let s=`<h2 class="title">Guías internacionales</h2>
@@ -955,8 +968,9 @@ function renderIntlList(){
     s+=`<div class="grid">`;
     GUIAS_INTL.forEach(g=>{
       s+=`<div class="guide-card" onclick="openGuiaIntl('${g.id}')" style="border-left:5px solid ${g.color}">
-        <div class="card-top"><span class="tag">${g.area}</span><span class="badge b-ready">${g.ed}</span></div>
-        <h3>${g.sigla} · ${g.nombre}</h3>
+        <div class="card-top"><span class="tag">${g.area}</span><span class="badge b-ready" title="${g.ed}">${edCorta(g.ed)}</span></div>
+        <h3>${g.sigla}</h3>
+        <p class="gc-sub">${g.nombre}</p>
         <p>${g.cubre.slice(0,3).join(" · ")}${g.cubre.length>3?" · …":""}</p>
         <div class="stat-line"><span><b>${g.sec.length}</b> secciones</span><span><b>${g.sec.reduce((a,s)=>a+s.p.length,0)}</b> puntos</span></div>
       </div>`;
@@ -966,8 +980,9 @@ function renderIntlList(){
     s+=`<div class="grid">`;
     INTL.forEach(f=>{
       s+=`<div class="guide-card" onclick="openIntlFicha('${f.id}')">
-        <div class="card-top"><span class="tag">${f.area}</span><span class="badge b-ready">${f.fuente.split(" — ")[0]}</span></div>
-        <h3>${f.tema}</h3><p>${f.ed}</p>
+        <div class="card-top"><span class="tag">${f.area}</span><span class="badge b-ready" title="${f.ed}">${edCorta(f.ed)}</span></div>
+        <h3>${f.tema}</h3>
+        <p class="gc-sub" title="${f.fuente}">${corto(f.fuente.split(" — ")[0],44)}</p>
         <div class="stat-line"><span>Ver diferencia →</span></div>
       </div>`;
     });
