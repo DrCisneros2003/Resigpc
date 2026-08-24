@@ -375,6 +375,29 @@
 .seo-col li{font-size:13px;line-height:1.65;color:var(--muted)}
 .seo-pie{font-size:12.5px;border-top:1px solid var(--line);padding-top:18px}
 
+/* --- Pregunta de portada: lo primero que ve quien llega sin cuenta --- */
+.lq-card{background:#fff;border-radius:16px;padding:18px 18px 16px;box-shadow:0 14px 40px rgba(4,20,36,.30);text-align:left}
+.lq-tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#155e9c;background:#eef6fc;border-radius:999px;padding:4px 11px;margin-bottom:10px}
+.lq-q{font-size:15px;line-height:1.55;color:#0f2f4d;margin:0 0 14px;font-weight:500}
+.lq-opt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:#fff;border:1.5px solid #d4e6f4;border-radius:11px;padding:11px 13px;margin-bottom:8px;font-size:14.5px;line-height:1.45;color:#1a2a36;cursor:pointer;transition:.12s;font-family:inherit}
+.lq-opt:hover:not(:disabled){border-color:#155e9c;background:#f7fbff}
+.lq-opt:disabled{cursor:default}
+.lq-let{flex:0 0 22px;height:22px;border-radius:50%;background:#eef6fc;color:#155e9c;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+.lq-opt.ok{border-color:#1a7f4b;background:#f2fbf5}
+.lq-opt.ok .lq-let{background:#1a7f4b;color:#fff}
+.lq-opt.mal{border-color:#c0392b;background:#fdf4f3}
+.lq-opt.mal .lq-let{background:#c0392b;color:#fff}
+.lq-fb{border-radius:11px;padding:12px 14px;font-size:14px;line-height:1.6;margin-top:4px}
+.lq-fb.ok{background:#f2fbf5;border-left:4px solid #1a7f4b;color:#14532d}
+.lq-fb.mal{background:#fdf4f3;border-left:4px solid #c0392b;color:#7f1d1d}
+.lq-fb b{display:block;margin-bottom:3px}
+.lq-fuente{font-size:12px;color:#5b6b7a;margin:10px 0 0}
+.lq-cta{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+.lq-cta button{flex:1;min-width:132px;border:0;border-radius:11px;padding:12px 14px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.lq-seguir{background:linear-gradient(120deg,#0b2b45,#155e9c);color:#fff}
+.lq-otra{background:#eef6fc;color:#155e9c;border:1px solid #cfe3f6 !important}
+@media(max-width:480px){ .lq-card{padding:15px} .lq-q{font-size:14.5px} .lq-opt{font-size:14px} }
+
 .gi-tabla-wrap{position:relative;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:16px 0 6px;border-radius:10px;box-shadow:0 1px 4px rgba(6,38,63,.10)}
 .gi-tabla{border-collapse:collapse;width:100%;min-width:520px;font-size:13.5px;background:#fff}
 .gi-tabla th,.gi-tabla td{border:1px solid #bcd8ee;padding:9px 12px;text-align:left;vertical-align:top;line-height:1.45}
@@ -405,7 +428,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
-<!-- RESIGPC_BUILD banco-2759-gpc216-tarjetas-intl -->
+<!-- RESIGPC_BUILD portada-pregunta-v1 -->
 <div class="bgscene" aria-hidden="true">
   <span class="snow" style="left:8%;animation-duration:11s;animation-delay:0s"></span>
   <span class="snow" style="left:20%;width:5px;height:5px;animation-duration:14s;animation-delay:2s"></span>
@@ -460,13 +483,11 @@
         <div style="font-weight:800;font-size:20px">Resi<span style="color:#bfe0f5">GPC</span></div>
         <button class="lbtn" style="margin-left:auto;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.38);color:#fff;font-weight:600;padding:8px 15px" onclick="openAuth('login')">Iniciar sesión</button>
       </div>
-      <div class="lherowrap" style="text-align:center;color:#fff;padding:34px 6px 18px">
-        <div class="lhero" style="font-size:30px;font-weight:800;line-height:1.2">Conquista el ENARM<br>desde la cima</div>
-        <div style="font-size:14.5px;opacity:.92;margin:14px auto 0;max-width:460px;line-height:1.6">Simulacros cronometrados, casos clínicos, guías de práctica clínica mexicanas y un tutor con inteligencia artificial. Todo en un solo lugar.</div>
-        <div style="display:flex;gap:10px;justify-content:center;margin-top:22px;flex-wrap:wrap">
-          <button class="lbtn" style="background:#fff;color:#0b2b45" onclick="enterApp()">Empezar gratis</button>
-        </div>
+      <div class="lherowrap" style="text-align:center;color:#fff;padding:26px 6px 6px">
+        <div class="lhero" style="font-size:26px;font-weight:800;line-height:1.2">Conquista el ENARM<br>desde la cima</div>
+        <div style="font-size:14px;opacity:.92;margin:10px auto 0;max-width:430px;line-height:1.55">Contesta una pregunta real del banco. Sin cuenta, sin registro.</div>
       </div>
+      <div id="lqWrap" style="position:relative;max-width:560px;margin:16px auto 0"></div>
     </div>
   </div>
 
@@ -3025,7 +3046,87 @@ function showLanding(){ const l=document.getElementById("landing"); if(l) l.clas
 function hideLanding(){ const l=document.getElementById("landing"); if(l) l.classList.add("hide"); const f=document.getElementById("tutorFab"); if(f) f.style.display=""; }
 function enterApp(){ hideLanding(); window.scrollTo(0,0); }
 function landingScroll(){ const l=document.getElementById("landing"), f=document.getElementById("lfeatures"); if(l&&f){ const top=f.getBoundingClientRect().top - l.getBoundingClientRect().top + l.scrollTop - 14; try{ l.scrollTo({top,behavior:"smooth"}); }catch(e){ l.scrollTop=top; } } }
-function initLanding(){ if(SUPA_ON && !hasStoredSession()) showLanding(); }
+/* =====================================================================
+   PREGUNTA DE PORTADA
+   Quien llega sin cuenta ve una pregunta real del banco antes que
+   cualquier otra cosa: ni precio, ni registro, ni menú. El 82% de las
+   visitas se iban sin tocar nada, y el producto quedaba a tres clics.
+   ===================================================================== */
+let lqActual=null, lqContestadas=0, lqVistas=[];
+
+function lqPool(){
+  try{
+    return SIM_BANK.filter(q =>
+      q && q.q && q.q.length>=180 && q.q.length<=290 &&
+      Array.isArray(q.opts) && q.opts.length===4 &&
+      q.opts.every(o=>o && o.length<=58) &&
+      Array.isArray(q.expl) && q.expl.length===4
+    );
+  }catch(e){ return []; }
+}
+function lqElegir(){
+  const pool=lqPool();
+  if(!pool.length) return null;
+  // no repetir dentro de la misma visita mientras queden nuevas
+  const frescas=pool.filter(q=>lqVistas.indexOf(q.q)<0);
+  const de=frescas.length?frescas:pool;
+  return de[Math.floor(Math.random()*de.length)];
+}
+function lqEsc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function renderLandingQ(){
+  const w=document.getElementById("lqWrap"); if(!w) return;
+  const q=lqElegir();
+  if(!q){ // sin banco disponible: no dejamos la portada vacía
+    w.innerHTML=`<div style="text-align:center"><button class="lbtn" style="background:#fff;color:#0b2b45" onclick="enterApp()">Empezar gratis</button></div>`;
+    return;
+  }
+  lqActual=q; lqVistas.push(q.q);
+  let s=`<div class="lq-card">
+    <div class="lq-tag">${lqEsc(q.area||"ENARM")} · pregunta real del banco</div>
+    <p class="lq-q">${lqEsc(q.q)}</p>
+    <div id="lqOpts">`;
+  q.opts.forEach((o,i)=>{
+    s+=`<button class="lq-opt" type="button" onclick="lqResponder(${i})"><span class="lq-let">${"ABCD"[i]}</span><span>${lqEsc(o)}</span></button>`;
+  });
+  s+=`</div><div id="lqFb"></div></div>`;
+  w.innerHTML=s;
+  track("landing_pregunta_vista",{area:q.area},true);
+}
+
+function lqResponder(i){
+  const q=lqActual; if(!q) return;
+  const acerto = i===q.correct;
+  lqContestadas++;
+  const botones=document.querySelectorAll("#lqOpts .lq-opt");
+  botones.forEach((b,j)=>{
+    b.disabled=true;
+    if(j===q.correct) b.classList.add("ok");
+    else if(j===i)    b.classList.add("mal");
+  });
+  const fb=document.getElementById("lqFb"); if(!fb) return;
+  fb.innerHTML=`
+    <div class="lq-fb ${acerto?"ok":"mal"}">
+      <b>${acerto?"Correcto":"Respuesta correcta: "+"ABCD"[q.correct]}</b>
+      ${lqEsc(q.expl[q.correct])}
+    </div>
+    ${q.guide?`<p class="lq-fuente">Fuente: ${lqEsc(q.guide)}</p>`:""}
+    <div class="lq-cta">
+      <button class="lq-seguir" onclick="lqEntrar()">Seguir practicando →</button>
+      <button class="lq-otra" onclick="renderLandingQ()">Otra pregunta</button>
+    </div>`;
+  fb.scrollIntoView({behavior:"smooth",block:"nearest"});
+  track("landing_pregunta_contestada",{area:q.area,acerto,n:lqContestadas});
+}
+
+function lqEntrar(){
+  track("landing_entro_tras_pregunta",{contestadas:lqContestadas});
+  enterApp();
+}
+
+function initLanding(){
+  if(SUPA_ON && !hasStoredSession()){ showLanding(); renderLandingQ(); }
+}
 async function authToken(){
   if(!SUPA_ON || !supa || !authUser) return "";
   try{ const {data}=await supa.auth.getSession(); return data.session?data.session.access_token:""; }catch(e){ return ""; }
