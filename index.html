@@ -197,6 +197,9 @@
   .sim-pick b{display:block;font-size:26px;color:var(--brand-d);font-weight:800}
   .sim-pick span{font-size:12px;color:#64748b;display:block}
   .sim-pick .sim-prem{color:#b45309;font-weight:700;font-size:10.5px;margin-top:3px;letter-spacing:.02em}
+  .sim-pick .sim-libre{color:#1a7f4b;font-weight:700;font-size:10.5px;margin-top:3px;letter-spacing:.02em}
+  .sim-pick.corto{border-color:#1a7f4b;background:#f4fbf6}
+  .sim-pick.corto:hover{border-color:#14663c;background:#eaf7ef}
   .sim-case{width:100%;background:#eef6fc;border:1px solid #bfe0f5;border-left:4px solid var(--brand);border-radius:12px;padding:13px 16px;margin-bottom:12px;text-align:left}
   .sim-case-h{font-size:12px;font-weight:700;color:var(--brand-d);margin-bottom:5px;letter-spacing:.02em}
   .sim-case-b{font-size:14.5px;line-height:1.5;color:var(--ink)}
@@ -428,7 +431,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
-<!-- RESIGPC_BUILD portada-pregunta-v1 -->
+<!-- RESIGPC_BUILD portada-pregunta-sim10 -->
 <div class="bgscene" aria-hidden="true">
   <span class="snow" style="left:8%;animation-duration:11s;animation-delay:0s"></span>
   <span class="snow" style="left:20%;width:5px;height:5px;animation-duration:14s;animation-delay:2s"></span>
@@ -3754,17 +3757,20 @@ function simConfig(){
   const bestHtml = best ? `<p class="muted" style="margin-top:14px">Tu mejor resultado: <b>${best.score}/${best.total}</b> (${best.pct}%)</p>` : "";
   const freeHtml = (typeof isPremiumUser==="function" && !isPremiumUser())
     ? (simTieneCuenta()
-        ? `<p class="muted" style="margin-top:8px">Te quedan <b>${simFreeLeft()}</b> de ${simFreeMax()} simulacros gratis hoy. Premium: ilimitados.</p>`
-        : `<p class="muted" style="margin-top:8px">Te queda <b>${simFreeLeft()}</b> de ${simFreeMax()} simulacro gratis hoy.<br><a href="javascript:openAuth('signup')" style="color:var(--brand);font-weight:700">Crea tu cuenta gratis</a> y haz <b>3 al día</b>.</p>`)
+        ? `<p class="muted" style="margin-top:8px">El de <b>${SIM_CORTO}</b> es siempre libre. De los de 25 te quedan <b>${simFreeLeft()}</b> de ${simFreeMax()} hoy. Premium: ilimitados.</p>`
+        : `<p class="muted" style="margin-top:8px">El de <b>${SIM_CORTO}</b> es siempre libre, cuantos quieras. Del de 25 te queda <b>${simFreeLeft()}</b> de ${simFreeMax()} hoy.<br><a href="javascript:openAuth('signup')" style="color:var(--brand);font-weight:700">Crea tu cuenta gratis</a> y haz <b>3 al día</b>.</p>`)
       : "";
   document.getElementById("simTimer").classList.add("hide");
   // Tamaños disponibles según el banco de casos clínicos
-  const labels={25:"~25 min",50:"~50 min",100:"~1 h 40"};
-  const sizes=[25]; if(total>=45) sizes.push(50); if(total>=90) sizes.push(100);
+  const labels={10:"~10 min",25:"~25 min",50:"~50 min",100:"~1 h 40"};
+  const sizes=[10,25]; if(total>=45) sizes.push(50); if(total>=90) sizes.push(100);
   const prem = (typeof isPremiumUser==="function" && isPremiumUser());
   const picks=sizes.map(n=>{
-    const tag = prem ? '' : (n>25 ? '<span class="sim-prem">🔒 Premium</span>' : '<span>gratis</span>');
-    return `<div class="sim-pick" onclick="simStart(${n})"><b>${n}</b><span>${labels[n]}</span>${tag}</div>`;
+    // El de 10 nunca se bloquea ni gasta el cupo del día: es la puerta de entrada.
+    const tag = n===SIM_CORTO ? '<span class="sim-libre">siempre libre</span>'
+              : prem ? ''
+              : (n>25 ? '<span class="sim-prem">🔒 Premium</span>' : '<span>gratis</span>');
+    return `<div class="sim-pick${n===SIM_CORTO?" corto":""}" onclick="simStart(${n})"><b>${n}</b><span>${labels[n]}</span>${tag}</div>`;
   }).join("");
   const modeNote = simMode==="study"
     ? "Modo estudio: al responder verás al instante si acertaste y <b>por qué</b> (con la explicación de cada opción). Sin cronómetro."
@@ -3791,7 +3797,8 @@ function simConfig(){
 function simSetMode(m){ simMode=m; simConfig(); }
 /* Límite de simulacros gratis por día (Premium = ilimitado). Se lleva en el dispositivo. */
 const SIM_FREE_KEY="resigpc_sim_free_v2";
-const SIM_FREE_ANON=1;      // sin cuenta: 1 simulacro al día
+const SIM_CORTO=10;         // puerta de entrada: sin bloqueo y sin gastar cupo
+const SIM_FREE_ANON=1;      // sin cuenta: 1 simulacro de 25 al día
 const SIM_FREE_CUENTA=3;    // con cuenta gratis: 3 al día
 /* La cuenta gratis triplica los simulacros diarios. Es el motivo honesto para registrarse:
    el alumno recibe algo real antes de que se le pida un solo peso. */
@@ -3801,6 +3808,11 @@ function simFreeToday(){ const t=dstr(new Date()); let d={}; try{d=JSON.parse(lo
 function simFreeLeft(){ return Math.max(0, simFreeMax() - simFreeToday()); }
 function simFreeInc(){ const t=dstr(new Date()); try{ localStorage.setItem(SIM_FREE_KEY, JSON.stringify({date:t, n:simFreeToday()+1})); }catch(e){} }
 function simStart(n){
+  /* El simulacro de 10 no se bloquea nunca ni gasta el cupo del día.
+     Antes el más corto era de 25 min y era el único gratis: quien lo
+     abandonaba a la mitad quemaba su único intento diario y se topaba
+     con un muro si volvía. De 15 que lo empezaban, solo 6 lo terminaban. */
+  if(n===SIM_CORTO){ simRun(n); return; }
   // Premium: todo ilimitado. Gratis: solo el de 25, con tope diario.
   if(n>25 && !isPremiumUser()){ simShowLocked(n); return; }
   if(!isPremiumUser()){
