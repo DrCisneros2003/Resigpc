@@ -16,7 +16,14 @@
  *  de todos los usuarios la primera vez que abran la app con conexión.
  */
 
-const CACHE = "resigpc-v2";
+/*  v3: con las páginas fijas por guía (guia/*.html, intl/*.html, guias.html)
+ *  ya no toda navegación es la app. La v2 guardaba cualquier página visitada
+ *  con el nombre de index.html, así que abrir una guía habría reemplazado la
+ *  copia sin conexión de la app. Ahora cada página se guarda con su propia
+ *  dirección y solo la app se guarda como index.html. Tampoco se guardan
+ *  respuestas de error.
+ */
+const CACHE = "resigpc-v3";
 const CORE = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -37,10 +44,10 @@ self.addEventListener("message", e => {
   if (e.data === "actualizar") self.skipWaiting();
 });
 
-function esLaApp(req, url) {
-  return req.mode === "navigate" ||
-         url.pathname.endsWith("/") ||
-         url.pathname.endsWith("/index.html");
+// Solo esto es la app. Las demás páginas (guías fijas, índice) se navegan
+// igual que la app pero se guardan con su propia dirección.
+function esLaApp(url) {
+  return url.pathname.endsWith("/") || url.pathname.endsWith("/index.html");
 }
 
 self.addEventListener("fetch", e => {
@@ -50,16 +57,20 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   if (url.origin !== location.origin) return; // no tocar Supabase ni el Tutor
 
-  // La app: primero la red, con la caché como respaldo sin conexión
-  if (esLaApp(req, url)) {
+  // Navegación: primero la red, con la caché como respaldo sin conexión
+  if (req.mode === "navigate" || esLaApp(url)) {
+    const app = esLaApp(url);
+    const clave = app ? "./index.html" : req;
     e.respondWith(
       fetch(req)
         .then(resp => {
-          const copia = resp.clone();
-          caches.open(CACHE).then(c => c.put("./index.html", copia)).catch(() => {});
+          if (resp.ok) {
+            const copia = resp.clone();
+            caches.open(CACHE).then(c => c.put(clave, copia)).catch(() => {});
+          }
           return resp;
         })
-        .catch(() => caches.match("./index.html").then(hit => hit || caches.match("./")))
+        .catch(() => caches.match(clave).then(hit => hit || caches.match("./index.html")))
     );
     return;
   }
@@ -67,8 +78,10 @@ self.addEventListener("fetch", e => {
   // Archivos fijos: primero la caché
   e.respondWith(
     caches.match(req).then(hit => hit || fetch(req).then(resp => {
-      const copia = resp.clone();
-      caches.open(CACHE).then(c => c.put(req, copia)).catch(() => {});
+      if (resp.ok) {
+        const copia = resp.clone();
+        caches.open(CACHE).then(c => c.put(req, copia)).catch(() => {});
+      }
       return resp;
     }).catch(() => caches.match("./index.html")))
   );
